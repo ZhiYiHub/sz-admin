@@ -458,15 +458,16 @@ const findAllParentIds = (tree: RoleMenuTree[], targetId: string): string[] => {
 const getAllMenuIdsWithParentAndButton = (): string[] => {
   const idsSet = new Set<string>();
   Object.entries(menuAuthMap).forEach(([menuId, cfg]) => {
+    // 只保留真正有权限的菜单
+    if (hasMenuConfig(menuId)) {
+      idsSet.add(menuId);
+      findAllParentIds(rawMenuTree.value, menuId).forEach(pid => idsSet.add(pid));
+    }
     if (cfg.buttonIds && cfg.buttonIds.length) {
       cfg.buttonIds.forEach(btnId => {
         idsSet.add(btnId);
         findAllParentIds(rawMenuTree.value, btnId).forEach(pid => idsSet.add(pid));
       });
-    }
-    if (menuConfigMap[menuId]) {
-      idsSet.add(menuId);
-      findAllParentIds(rawMenuTree.value, menuId).forEach(pid => idsSet.add(pid));
     }
   });
   return Array.from(idsSet);
@@ -487,7 +488,7 @@ const handleSubmit = async () => {
   const menuIds = getAllMenuIdsWithParentAndButton();
 
   const scope = Object.entries(menuAuthMap)
-    .filter(([, cfg]) => cfg.useDataScope === 'T' && cfg.dataScope)
+    .filter(([menuId, cfg]) => hasMenuConfig(menuId) && cfg.useDataScope === 'T' && cfg.dataScope)
     .map(([menuId, cfg]) => ({
       menuId,
       dataScope: cfg.dataScope,
@@ -669,7 +670,7 @@ const hasMenuConfig = (menuId: string): boolean => {
   if (!cfg) return false;
   const hasMenuSelected = !!cfg.menuSelected;
   const hasButtons = Array.isArray(cfg.buttonIds) && cfg.buttonIds.length > 0;
-  const hasDataScope = cfg.useDataScope === 'T' && !!cfg.dataScope;
+  const hasDataScope = cfg.useDataScope === 'T' && !!cfg.dataScope && (hasButtons || hasMenuSelected);
   const hasUsers = Array.isArray(cfg.users) && cfg.users.length > 0;
   const hasDepts = Array.isArray(cfg.depts) && cfg.depts.length > 0;
   return hasMenuSelected || hasButtons || hasDataScope || hasUsers || hasDepts;
