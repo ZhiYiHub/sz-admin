@@ -4,6 +4,7 @@ LABEL authors="sz"
 
 # 将前端项目静态文件复制到容器中
 COPY ./dist /usr/share/nginx/sz-admin
+COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # 暴露 9800 端口
 EXPOSE 9800
